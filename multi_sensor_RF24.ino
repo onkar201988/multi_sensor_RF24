@@ -23,11 +23,11 @@ const float     VccMin      = 1.8;            // Minimum expected Vcc level, in 
 const float     VccMax      = 3.2;            // Maximum expected Vcc level, in Volts. (100%)
 const float     VccCorrection = 1.0/1.0;      // Measured Vcc by multimeter divided by reported Vcc
 
-const int       sleepDuration = 2;            // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day)
+const int       sleepDuration = 8;            // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day)
 volatile int    sleepCounter  = 0;            // Counter to keep sleep count
 
 volatile int    motionDetectTimer = 0;        // motion detection timer, which will keep motion active for certain time
-const int       motionTimerDuration = 8;      // constant motion timer duration (8 Sec x numebr of times) (8 for a min approx.)
+const int       motionTimerDuration = 3;      // constant motion timer duration (8 Sec x numebr of times) (8 for a min approx.)
 volatile bool   motionDetected = false;       // motion detection flag
 //----------------------------------------------------------------------------------------------------
 const int       SENSORTYPE   = 0;             // Sensor type [D:Door, T:Temerature, etc]
@@ -83,6 +83,12 @@ void readSensorData()
 //----------------------------------------------------------------------------------------------------
 void motionDetection_ISR()
 {
+  #ifdef debug
+    Serial.println("Motion detected");
+    delay(200);
+    yield();
+  #endif
+  
   if (! motionDetected )
   {
     motionDetected = true;
@@ -138,10 +144,10 @@ void sendData()
 void readLightIntensity()
 {
   int lightValue = analogRead(LDR_pin);
-  send_payload[LIGHT] = (char)(map(lightValue, 0, 100, 0, 1023));
+  send_payload[LIGHT] = (char)(map(lightValue, 0, 1023, 0, 100));
   #ifdef debug
     Serial.print("Light intensity:");
-    Serial.println(map(lightValue, 0, 100, 0, 1023));
+    Serial.println(map(lightValue, 0, 1023, 0, 100));
     delay(200);
     yield();
   #endif
@@ -191,8 +197,11 @@ void loop() {
 
   if(motionDetected)
   {
-    motionDetectTimer++;                      // increment motion timer only if motion detected
-
+    if(!digitalRead(PIR_pin))                 // Check if PIR pin is low, then only increment counter
+    {                                         // Beccause if motion is continuously active, no interrupt will be fired
+      motionDetectTimer++;
+    }
+    
     if(motionDetectTimer >= motionTimerDuration)
     {
       #ifdef debug
@@ -223,7 +232,7 @@ void loop() {
   else
   {
     #ifdef debug
-      Serial.println("Going to sleep...");
+      Serial.println("Going to sleep");
       delay(200);
       yield();
     #endif

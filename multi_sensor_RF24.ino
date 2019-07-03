@@ -13,6 +13,7 @@ const uint8_t   CSN_pin   = 9;                // This pin is used for SPI comm c
 #define         LDR_pin     A0                // LDR pin, connected to A0 analog pin
 const uint8_t   DHT_pin   = 7;                // DHT 11 sensor pin
 const uint8_t   PIR_pin   = 2;                // PIR pin
+const uint8_t   SENSOR_VCC_pin = 4;           // VCC for DHT and LDR is provided via pin 4
 
 const uint64_t  pipeAddress = 0xB00B1E50C3LL; // Create pipe address for the network, "LL" is for LongLong type
 const uint8_t   rfChannel   = 89;             // Set channel frequency default (chan 84 is 2.484GHz to 2.489GHz)
@@ -62,6 +63,8 @@ void setup() {
   pinMode(PIR_pin, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIR_pin), motionDetection_ISR, RISING);
   
+  pinMode(SENSOR_VCC_pin, OUTPUT);
+  
   #ifdef debug
     Serial.begin(115200);                     //serial port to display received data
     Serial.println("Multi sensor module is online...");
@@ -73,11 +76,24 @@ void setup() {
 }
 
 //----------------------------------------------------------------------------------------------------
+void turnOnVcc()
+{
+  digitalWrite(SENSOR_VCC_pin, true);
+  delay(1000);
+}
+//----------------------------------------------------------------------------------------------------
+void turnOffVcc()
+{
+  digitalWrite(SENSOR_VCC_pin, false);
+}
+//----------------------------------------------------------------------------------------------------
 void readSensorData()
 {
+  turnOnVcc();
   readBattery();
   readTempHumidity();
   readLightIntensity();
+  turnOffVcc();
 }
 
 //----------------------------------------------------------------------------------------------------

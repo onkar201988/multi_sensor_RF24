@@ -6,25 +6,25 @@
 #include <avr/wdt.h>
 #include <DHT.h>
 
-#define debug                                 // comment this to remove serial prints
+//#define debug                                 // comment this to remove serial prints
 //----------------------------------------------------------------------------------------------------
 const uint8_t   CE_pin    = 8;                // This pin is used to set the nRF24 to standby (0) or active mode (1)
 const uint8_t   CSN_pin   = 9;                // This pin is used for SPI comm chip select
 #define         LDR_pin     A0                // LDR pin, connected to A0 analog pin
 const uint8_t   DHT_pin   = 7;                // DHT 11 sensor pin
 const uint8_t   PIR_pin   = 2;                // PIR pin
-const uint8_t   SENSOR_VCC_pin = 4;           // VCC for DHT and LDR is provided via pin 4
+const uint8_t   SENSOR_VCC_pin = 6;           // VCC for DHT and LDR is provided via pin 6
 
 const uint64_t  pipeAddress = 0xB00B1E50C3LL; // Create pipe address for the network, "LL" is for LongLong type
 const uint8_t   rfChannel   = 89;             // Set channel frequency default (chan 84 is 2.484GHz to 2.489GHz)
 const uint8_t   retryDelay  = 7;              // this is based on 250us increments, 0 is 250us so 7 is 2 ms
 const uint8_t   numRetries  = 5;              // number of retries that will be attempted
 
-const float     VccMin      = 1.8;            // Minimum expected Vcc level, in Volts. (0%)
-const float     VccMax      = 3.2;            // Maximum expected Vcc level, in Volts. (100%)
+const float     VccMin      = 2.5;            // Minimum expected Vcc level, in Volts. (0%)
+const float     VccMax      = 3.3;            // Maximum expected Vcc level, in Volts. (100%)
 const float     VccCorrection = 1.0/1.0;      // Measured Vcc by multimeter divided by reported Vcc
 
-const int       sleepDuration = 8;            // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day)
+const int       sleepDuration = 38;           // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day) (225 for 30 mins)
 volatile int    sleepCounter  = 0;            // Counter to keep sleep count
 
 volatile int    motionDetectTimer = 0;        // motion detection timer, which will keep motion active for certain time
@@ -70,7 +70,6 @@ void setup() {
     Serial.println("Multi sensor module is online...");
   #endif
 
-  dht.begin();
   readSensorData();
   sendData();                                 // and send to server
 }
@@ -79,7 +78,7 @@ void setup() {
 void turnOnVcc()
 {
   digitalWrite(SENSOR_VCC_pin, true);
-  delay(1000);
+  delay(1500);
 }
 //----------------------------------------------------------------------------------------------------
 void turnOffVcc()
@@ -90,6 +89,7 @@ void turnOffVcc()
 void readSensorData()
 {
   turnOnVcc();
+  dht.begin();
   readBattery();
   readTempHumidity();
   readLightIntensity();
@@ -202,10 +202,10 @@ void readTempHumidity()
 }
 
 //----------------------------------------------------------------------------------------------------
-ISR(WDT_vect)
-{
-  //wdt_disable();
-}
+//ISR(WDT_vect)
+//{
+//  //wdt_disable();
+//}
 
 //----------------------------------------------------------------------------------------------------
 

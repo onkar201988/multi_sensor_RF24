@@ -24,11 +24,11 @@ const float     VccMin      = 2.5;            // Minimum expected Vcc level, in 
 const float     VccMax      = 3.3;            // Maximum expected Vcc level, in Volts. (100%)
 const float     VccCorrection = 1.0/1.0;      // Measured Vcc by multimeter divided by reported Vcc
 
-const int       sleepDuration = 38;           // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day) (225 for 30 mins)
+const int       sleepDuration = 40;           // Sleep duration to report Temp data (8 Sec x number of times)(10800 for a day) (38 for 5 mins)
 volatile int    sleepCounter  = 0;            // Counter to keep sleep count
 
 volatile int    motionDetectTimer = 0;        // motion detection timer, which will keep motion active for certain time
-const int       motionTimerDuration = 3;      // constant motion timer duration (8 Sec x numebr of times) (8 for a min approx.)
+const int       motionTimerDuration = 15;     // constant motion timer duration (8 Sec x numebr of times) (8 for a min approx.)
 volatile bool   motionDetected = false;       // motion detection flag
 //----------------------------------------------------------------------------------------------------
 const int       SENSORTYPE   = 0;             // Sensor type [D:Door, T:Temerature, etc]
@@ -53,7 +53,7 @@ DHT dht(DHT_pin, DHTTYPE);                    // Declaire object for DHT
 void setup() {
   
   send_payload[SENSORTYPE]   = 'T';           // Sensor type [D:Door, T:Temerature, etc]
-  send_payload[SENSORNUMBER] = '1';           // Sensor number[1: Living Room, 2:kitchen, 3:Master bedroom, etc]
+  send_payload[SENSORNUMBER] = '2';           // Sensor number[1: Living Room, 2:kitchen, 3:Master bedroom, etc]
   send_payload[MOTION]       = 'A';           // Motion sensor status, P:Presenmt, A:Absent]
   send_payload[BATTERY]      = (char) 100;    // Battery status, 0-100%
   send_payload[TEPMERATURE]  = (char) 0;      // Temperature (in F: 0 - 255)
@@ -64,6 +64,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PIR_pin), motionDetection_ISR, RISING);
   
   pinMode(SENSOR_VCC_pin, OUTPUT);
+  digitalWrite(SENSOR_VCC_pin, true);
   
   #ifdef debug
     Serial.begin(115200);                     //serial port to display received data
@@ -75,25 +76,13 @@ void setup() {
 }
 
 //----------------------------------------------------------------------------------------------------
-void turnOnVcc()
-{
-  digitalWrite(SENSOR_VCC_pin, true);
-  delay(1500);
-}
-//----------------------------------------------------------------------------------------------------
-void turnOffVcc()
-{
-  digitalWrite(SENSOR_VCC_pin, false);
-}
-//----------------------------------------------------------------------------------------------------
 void readSensorData()
 {
-  turnOnVcc();
   dht.begin();
+  //delay(500);
   readBattery();
   readTempHumidity();
   readLightIntensity();
-  turnOffVcc();
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -200,12 +189,6 @@ void readTempHumidity()
   send_payload[TEPMERATURE] = (char)((int) newTempValue); // Convert float to int and then char
   send_payload[HUMIDITY]    = (char)((int) newHumValue);  // Because we can only send a 8 bit data
 }
-
-//----------------------------------------------------------------------------------------------------
-//ISR(WDT_vect)
-//{
-//  //wdt_disable();
-//}
 
 //----------------------------------------------------------------------------------------------------
 
